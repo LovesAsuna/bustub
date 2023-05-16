@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <list>
 #include <mutex>  // NOLINT
 #include <vector>
@@ -46,7 +47,15 @@ class ClockReplacer : public Replacer {
   auto Size() -> size_t override;
 
  private:
-  // TODO(student): implement me!
+  std::mutex latch_;
+
+  size_t num_pages_;
+
+  frame_id_t pointer_;
+
+  bool *ref_flag_;
+
+  auto NextSlot(frame_id_t slot) -> frame_id_t;
 };
 
 }  // namespace bustub
