@@ -3,13 +3,38 @@
 
 namespace bustub {
 
-BasicPageGuard::BasicPageGuard(BasicPageGuard &&that) noexcept {}
+BasicPageGuard::BasicPageGuard(BasicPageGuard &&that) noexcept {
+  bpm_ = that.bpm_;
+  page_ = that.page_;
+  is_dirty_ = that.is_dirty_;
 
-void BasicPageGuard::Drop() {}
+  that.bpm_ = nullptr;
+  that.bpm_ = nullptr;
+  that.is_dirty_ = false;
+}
 
-auto BasicPageGuard::operator=(BasicPageGuard &&that) noexcept -> BasicPageGuard & { return *this; }
+void BasicPageGuard::Drop() {
+  if (bpm_ == nullptr || page_ == nullptr) {
+    return;
+  }
+  bpm_->UnpinPage(page_->GetPageId(), is_dirty_);
+  bpm_ = nullptr;
+  page_ = nullptr;
+}
 
-BasicPageGuard::~BasicPageGuard(){};  // NOLINT
+auto BasicPageGuard::operator=(BasicPageGuard &&that) noexcept -> BasicPageGuard & {
+  Drop();
+  bpm_ = that.bpm_;
+  page_ = that.page_;
+  is_dirty_ = that.is_dirty_;
+
+  that.bpm_ = nullptr;
+  that.bpm_ = nullptr;
+  that.is_dirty_ = false;
+  return *this;
+}
+
+BasicPageGuard::~BasicPageGuard() { Drop(); };  // NOLINT
 
 ReadPageGuard::ReadPageGuard(ReadPageGuard &&that) noexcept = default;
 
