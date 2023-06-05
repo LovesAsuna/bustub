@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <deque>
 #include <iostream>
+#include <mutex>
 #include <optional>
 #include <queue>
 #include <shared_mutex>
@@ -32,6 +33,7 @@ namespace bustub {
 
 struct PrintableBPlusTree;
 
+enum class Operation { FIND = 0, INSERT, DELETE };
 /**
  * @brief Definition of the Context class.
  *
@@ -110,11 +112,16 @@ class BPlusTree {
    */
   auto DrawBPlusTree() -> std::string;
 
-  // read data from file and insert one by one
+  // read data from file and insert one by one*
   void InsertFromFile(const std::string &file_name, Transaction *txn = nullptr);
 
   // read data from file and remove one by one
   void RemoveFromFile(const std::string &file_name, Transaction *txn = nullptr);
+
+  auto FindLeafPage(const KeyType &key, bool leftMost = false) -> WritePageGuard;
+
+  auto FindLeafPageByOperation(const KeyType &key, Operation operation = Operation::FIND, Transaction *txn = nullptr,
+                               bool leftMost = false, bool rightMost = false) -> std::pair<WritePageGuard, bool>;
 
  private:
   /* Debug Routines for FREE!! */
@@ -138,6 +145,39 @@ class BPlusTree {
   int leaf_max_size_;
   int internal_max_size_;
   page_id_t header_page_id_;
+  std::mutex latch_;
+  std::mutex root_latch_;
+
+  auto StartNewTree(const KeyType &key, const ValueType &value);
+
+  auto InsertIntoParent(BPlusTreePage *old_node, const KeyType &key, BPlusTreePage *new_node,
+                        Transaction *txn = nullptr, bool *root_is_latched = nullptr);
+
+  auto InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *txn = nullptr) -> bool;
+
+  template <typename N>
+  auto Split(N *node) -> N *;
+
+  template <typename N>
+  auto CoalesceOrRedistribute(N *node, Transaction *txn, bool *root_is_latched) -> bool;
+
+  template <typename N>
+  auto Coalesce(N **neighbor_node, N **node, InternalPage **parent, int index, Transaction *txn = nullptr,
+                bool *root_is_latched = nullptr) -> bool;
+
+  template <typename N>
+  void Redistribute(N *neighbor_node, N *node, int index);
+
+  auto AdjustRoot(BPlusTreePage *node) -> bool;
+
+  auto UpdateRootPageId(page_id_t page_id);
+
+  void UnlockPages(Transaction *txn);
+
+  void UnlockUnpinPages(Transaction *txn);
+
+  template <typename N>
+  auto IsSafe(N *node, Operation op) -> bool;
 };
 
 /**
