@@ -63,6 +63,8 @@ class BasicPageGuard {
 
   auto GetData() -> const char * { return page_->GetData(); }
 
+  auto GetPage() -> Page * { return page_; }
+
   template <class T>
   auto As() -> const T * {
     return reinterpret_cast<const T *>(GetData());
@@ -142,6 +144,12 @@ class ReadPageGuard {
     return guard_.As<T>();
   }
 
+  auto GetPage() -> Page * { return guard_.page_; }
+
+  inline void RLatch() { guard_.page_->RLatch(); }
+
+  inline void RUnlatch() { guard_.page_->RUnlatch(); }
+
  private:
   // You may choose to get rid of this and add your own private variables.
   BasicPageGuard guard_;
@@ -208,6 +216,16 @@ class WritePageGuard {
   auto AsMut() -> T * {
     return guard_.AsMut<T>();
   }
+
+  auto GetPage() -> Page * { return guard_.page_; }
+
+  void RLatch() { guard_.page_->RLatch(); }
+
+  void RUnlatch() { guard_.page_->RUnlatch(); }
+
+  void WLatch() { guard_.page_->WLatch(); }
+
+  void WUnlatch() { guard_.page_->WUnlatch(); }
 
  private:
   // You may choose to get rid of this and add your own private variables.
